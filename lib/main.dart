@@ -95,10 +95,13 @@ class _DemoPageState extends State<DemoPage> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
-                ElevatedButton(
-                  onPressed: () async =>
-                      context.read<JItemsProvider>().getData(),
-                  child: Text('Get Data'),
+                Consumer<JItemsProvider>(
+                  builder: (context, value, child) {
+                    return ElevatedButton(
+                      onPressed: () => value.getData(),
+                      child: Text('Get Data'),
+                    );
+                  },
                 ),
                 ElevatedButton(
                   onPressed: () => context.read<JItemsProvider>().clear(),
@@ -107,20 +110,16 @@ class _DemoPageState extends State<DemoPage> {
               ],
             ),
             Expanded(
-              child: ListView.builder(
-                itemCount: context.watch<JItemsProvider>().items.length,
-                itemBuilder: (context, index) {
-                  return ListTile(
-                    title: Text(
-                      context
-                          .watch<JItemsProvider>()
-                          .items[index]
-                          .id
-                          .toString(),
-                    ),
-                    subtitle: Text(
-                      context.watch<JItemsProvider>().items[index].title,
-                    ),
+              child: Consumer<JItemsProvider>(
+                builder: (context, value, child) {
+                  return ListView.builder(
+                    itemCount: value.items.length,
+                    itemBuilder: (context, index) {
+                      return ListTile(
+                        title: Text(value.items[index].id.toString()),
+                        subtitle: Text(value.items[index].title),
+                      );
+                    },
                   );
                 },
               ),
