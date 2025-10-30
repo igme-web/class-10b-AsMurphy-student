@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'dart:convert';
 
 // 1) You need to install this so it works 'flutter pub add http'
 import 'package:http/http.dart' as http;
@@ -7,6 +8,12 @@ import 'package:http/http.dart' as http;
 final String postURL = "https://jsonplaceholder.typicode.com/posts";
 
 // 2) ADD your JItem class below (we'll do in class or grab from 10b notes)
+class JItem {
+  final int id;
+  final String title;
+
+  JItem({required this.id, required this.title});
+}
 
 void main() {
   runApp(const MainApp());
@@ -29,9 +36,25 @@ class DemoPage extends StatefulWidget {
 }
 
 class _DemoPageState extends State<DemoPage> {
-
   //3 Add better type checking here use the <JList> we created
-  List data = [];
+  // List data = [];
+  List<JItem> data = [];
+
+  Future<List<JItem>> getData() async {
+    List<JItem> posts = [];
+
+    var response = await http.get(Uri.parse(postURL));
+
+    if (response.statusCode == 200) {
+      var data = json.decode(response.body);
+
+      for (var item in data) {
+        posts.add(JItem(id: item['id'], title: item['title']));
+      }
+    }
+
+    return posts;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -46,12 +69,19 @@ class _DemoPageState extends State<DemoPage> {
                 ElevatedButton(
                   onPressed: () async {
                     // Get data logic here
+                    List<JItem> returnData = await getData();
+                    setState(() {
+                      data = returnData;
+                    });
                   },
                   child: Text('Get Data'),
                 ),
                 ElevatedButton(
                   onPressed: () {
                     // Clear data logic here
+                    setState(() {
+                      data = [];
+                    });
                   },
                   child: Text('Clear Data'),
                 ),
