@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'dart:convert';
+import 'package:provider/provider.dart';
 
 // 1) You need to install this so it works 'flutter pub add http'
 import 'package:http/http.dart' as http;
 
 //This is where we will fetch some sample JSON (have a look at it please)
-final String postURL = "https://jsonplaceholder.typicode.com/posts";
+// final String postURL = "https://jsonplaceholder.typicode.com/posts";
 
 // 2) ADD your JItem class below (we'll do in class or grab from 10b notes)
 class JItem {
@@ -13,6 +14,31 @@ class JItem {
   final String title;
 
   JItem({required this.id, required this.title});
+}
+
+class JItemsProvider extends ChangeNotifier {
+  List<JItem> items = [];
+  final String postURL = "https://jsonplaceholder.typicode.com/posts";
+
+  Future<void> getData() async {
+    var response = await http.get(Uri.parse(postURL));
+
+    if (response.statusCode == 200) {
+      var data = json.decode(response.body);
+
+      for (var item in data) {
+        item.add(JItem(id: item['id'], title: item['title']));
+      }
+    }
+
+    // return posts; // We'll fix this next
+    notifyListeners();
+  }
+
+  void clear() {
+    items.clear();
+    notifyListeners();
+  }
 }
 
 void main() {
@@ -24,7 +50,10 @@ class MainApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const MaterialApp(home: DemoPage());
+    return ChangeNotifierProvider(
+      create: (context) => JItemsProvider(),
+      child: MaterialApp(title: 'Future Provider Example', home: DemoPage()),
+    );
   }
 }
 
@@ -40,26 +69,26 @@ class _DemoPageState extends State<DemoPage> {
   // List data = [];
   List<JItem> data = [];
 
-  Future<List<JItem>> getData() async {
-    List<JItem> posts = [];
+  // Future<List<JItem>> getData() async {
+  //   List<JItem> posts = [];
 
-    var response = await http.get(Uri.parse(postURL));
+  //   var response = await http.get(Uri.parse(postURL));
 
-    if (response.statusCode == 200) {
-      var data = json.decode(response.body);
+  //   if (response.statusCode == 200) {
+  //     var data = json.decode(response.body);
 
-      for (var item in data) {
-        posts.add(JItem(id: item['id'], title: item['title']));
-      }
-    }
+  //     for (var item in data) {
+  //       posts.add(JItem(id: item['id'], title: item['title']));
+  //     }
+  //   }
 
-    return posts;
-  }
+  //   return posts;
+  // }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('Example'), backgroundColor: Colors.blue),
+      appBar: AppBar(title: Text('Example'), backgroundColor: Colors.orange),
       body: Center(
         child: Column(
           children: [
@@ -67,33 +96,31 @@ class _DemoPageState extends State<DemoPage> {
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
                 ElevatedButton(
-                  onPressed: () async {
-                    // Get data logic here
-                    List<JItem> returnData = await getData();
-                    setState(() {
-                      data = returnData;
-                    });
-                  },
+                  onPressed: () async =>
+                      context.read<JItemsProvider>().getData(),
                   child: Text('Get Data'),
                 ),
                 ElevatedButton(
-                  onPressed: () {
-                    // Clear data logic here
-                    setState(() {
-                      data = [];
-                    });
-                  },
+                  onPressed: () => context.read<JItemsProvider>().clear(),
                   child: Text('Clear Data'),
                 ),
               ],
             ),
             Expanded(
               child: ListView.builder(
-                itemCount: data.length,
+                itemCount: context.watch<JItemsProvider>().items.length,
                 itemBuilder: (context, index) {
                   return ListTile(
-                    title: Text(data[index].id.toString()),
-                    subtitle: Text(data[index].title),
+                    title: Text(
+                      context
+                          .watch<JItemsProvider>()
+                          .items[index]
+                          .id
+                          .toString(),
+                    ),
+                    subtitle: Text(
+                      context.watch<JItemsProvider>().items[index].title,
+                    ),
                   );
                 },
               ),
